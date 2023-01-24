@@ -1,10 +1,11 @@
 ﻿using Booking.Core.Entities;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using IdentityRole = Microsoft.AspNetCore.Identity.IdentityRole;
 
 namespace Booking.Data.Data
 {
-    public class ApplicationDbContext : IdentityDbContext
+    public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityRole, string>
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
@@ -12,6 +13,7 @@ namespace Booking.Data.Data
 
         }
         public DbSet<GymClass> GymClasses { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

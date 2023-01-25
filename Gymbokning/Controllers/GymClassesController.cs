@@ -27,26 +27,6 @@ namespace Booking.Web.Controllers
             {
                 Console.WriteLine(User.Identity.Name);
             }
-            //var user = await userManager.GetUserAsync(User);
-            var userId = _userManager.GetUserId(User);
-
-
-            //if (User.Identity.IsAuthenticated)
-            //{
-            //    Console.WriteLine(User.Identity.Name);
-            //}
-
-
-            //if (userId != null) Console.WriteLine(userId);
-
-
-            //var gymClass = await _context.GymClasses.FindAsync(id);
-            //if (gymClass == null)
-            //{
-            //    return NotFound();
-            //}
-
-            //var gymClassAttendees = gymClass.AttendingMembers;
 
             return _context.GymClasses != null ?
                           View(await _context.GymClasses.ToListAsync()) :
@@ -62,6 +42,7 @@ namespace Booking.Web.Controllers
             }
 
             var gymClass = await _context.GymClasses
+                .Include(c => c.AttendingMembers).ThenInclude(m=>m.ApplicationUser)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (gymClass == null)
             {
@@ -187,6 +168,7 @@ namespace Booking.Web.Controllers
         }
 
 
+
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
@@ -195,22 +177,24 @@ namespace Booking.Web.Controllers
 
         public async Task<IActionResult> BookingToggle(int? id)
         {
-            //if (id==null) return NotFound();
+            if (id == null) return NotFound();
 
-            ////var user = await userManager.GetUserAsync(User);
-            //var userId = userManager.GetUserId(User);
-
-
-            //if (User.Identity.IsAuthenticated)
-            //{
-            //    Console.WriteLine(User.Identity.Name);
-            //}
+            var user = await _userManager.GetUserAsync(User);
+            var userId = _userManager.GetUserId(User);
 
 
-            //if (userId != null) Console.WriteLine(userId);
+            if (User.Identity.IsAuthenticated)
+            {
+                Console.WriteLine(User.Identity.Name);
+            }
 
 
-            var gymClass = await _context.GymClasses.FindAsync(id);
+            if (userId != null) Console.WriteLine(userId);
+
+
+            var gymClass = await _context.GymClasses
+                .Include(c => c.AttendingMembers).Where(c=>c.Id==id)
+                .FirstOrDefaultAsync();
             if (gymClass == null)
             {
                 return NotFound();
@@ -218,9 +202,25 @@ namespace Booking.Web.Controllers
 
             var gymClassAttendees = gymClass.AttendingMembers;
 
+            var isAttending = gymClassAttendees.Any(a => a.ApplicationUser.Id == userId);
+            if (isAttending) {
+                var applicationUserGymClass = gymClassAttendees.Where(a => a.GymClassId == id).FirstOrDefault();
 
+                _context.Remove(applicationUserGymClass);
+                await _context.SaveChangesAsync();
+            }
+            else { 
+            var applicationUserGymClass = new ApplicationUserGymClass
+            {
+                ApplicationUserId = userId,
+                GymClassId = id.GetValueOrDefault(),
+            };
 
-            return View(gymClass);
+            _context.Add(applicationUserGymClass);
+            await _context.SaveChangesAsync();
+            } 
+            //return View(nameof(Index),await _context.GymClasses.ToListAsync());
+            return RedirectToAction(nameof(Index));
         }
     }
 }

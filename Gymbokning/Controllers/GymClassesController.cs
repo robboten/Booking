@@ -1,5 +1,6 @@
 ﻿using Booking.Core.Entities;
 using Booking.Data.Data;
+using Booking.Web.Extensions;
 using Booking.Web.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -47,6 +48,7 @@ namespace Booking.Web.Controllers
             var gymClass = await _context.GymClasses
                 .Include(c => c.AttendingMembers).ThenInclude(m => m.ApplicationUser)
                 .FirstOrDefaultAsync(m => m.Id == id);
+
             if (gymClass == null)
             {
                 return NotFound();
@@ -58,9 +60,9 @@ namespace Booking.Web.Controllers
         // GET: GymClasses/Create
         public IActionResult Create()
         {
-            return View();
+            return Request.IsAjax() ? PartialView("CreateGymClassPartial") : View();
         }
-        [Authorize]
+
         // POST: GymClasses/Create
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
@@ -72,10 +74,18 @@ namespace Booking.Web.Controllers
             {
                 _context.Add(gymClass);
                 await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                return Request.IsAjax() ? 
+                    PartialView("GymClassesPartial", await _context.GymClasses.ToListAsync()) : 
+                    RedirectToAction(nameof(Index));
+            }
+            if (Request.IsAjax())
+            {
+                Response.StatusCode = StatusCodes.Status400BadRequest;
+                return PartialView("CreateGymClassPartial", gymClass);
             }
             return View(gymClass);
         }
+
         [Authorize]
         // GET: GymClasses/Edit/5
         public async Task<IActionResult> Edit(int? id)

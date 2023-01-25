@@ -8,7 +8,7 @@ namespace Booking.Data.Data
     {
         public static async Task InitAsync(ApplicationDbContext db)
         {
-            if (await db.GymClasses.AnyAsync()) return;
+            if (db.GymClasses.Any()) return;
 
             var classes = GenerateClasses(10);
             var members = GenerateMembers(10);

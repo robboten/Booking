@@ -1,10 +1,13 @@
 ﻿using Booking.Core.Entities;
 using Booking.Data.Data;
 using Booking.Web.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration.UserSecrets;
 using System.Diagnostics;
+using System.Security.Claims;
 
 namespace Booking.Web.Controllers
 {
@@ -42,7 +45,7 @@ namespace Booking.Web.Controllers
             }
 
             var gymClass = await _context.GymClasses
-                .Include(c => c.AttendingMembers).ThenInclude(m=>m.ApplicationUser)
+                .Include(c => c.AttendingMembers).ThenInclude(m => m.ApplicationUser)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (gymClass == null)
             {
@@ -57,7 +60,7 @@ namespace Booking.Web.Controllers
         {
             return View();
         }
-
+        [Authorize]
         // POST: GymClasses/Create
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
@@ -73,7 +76,7 @@ namespace Booking.Web.Controllers
             }
             return View(gymClass);
         }
-
+        [Authorize]
         // GET: GymClasses/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
@@ -89,7 +92,7 @@ namespace Booking.Web.Controllers
             }
             return View(gymClass);
         }
-
+        [Authorize]
         // POST: GymClasses/Edit/5
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
@@ -124,7 +127,7 @@ namespace Booking.Web.Controllers
             }
             return View(gymClass);
         }
-
+        [Authorize]
         // GET: GymClasses/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
@@ -142,7 +145,7 @@ namespace Booking.Web.Controllers
 
             return View(gymClass);
         }
-
+        [Authorize]
         // POST: GymClasses/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
@@ -174,52 +177,50 @@ namespace Booking.Web.Controllers
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
-
+        [Authorize]
         public async Task<IActionResult> BookingToggle(int? id)
         {
             if (id == null) return NotFound();
 
-            var user = await _userManager.GetUserAsync(User);
-            var userId = _userManager.GetUserId(User);
-
-
-            if (User.Identity.IsAuthenticated)
-            {
-                Console.WriteLine(User.Identity.Name);
-            }
-
-
-            if (userId != null) Console.WriteLine(userId);
-
-
             var gymClass = await _context.GymClasses
-                .Include(c => c.AttendingMembers).Where(c=>c.Id==id)
-                .FirstOrDefaultAsync();
+                .Include(c => c.AttendingMembers)
+                .FirstOrDefaultAsync(c => c.Id == id);
+
             if (gymClass == null)
             {
                 return NotFound();
             }
+            var userId = _userManager.GetUserId(User);
+            //var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null) { return BadRequest(); }
 
-            var gymClassAttendees = gymClass.AttendingMembers;
+            //var gymClassAttendees = gymClass.AttendingMembers;
 
-            var isAttending = gymClassAttendees.Any(a => a.ApplicationUser.Id == userId);
-            if (isAttending) {
-                var applicationUserGymClass = gymClassAttendees.Where(a => a.GymClassId == id).FirstOrDefault();
+            var attending = await _context.GymClasses.FindAsync(id);
 
-                _context.Remove(applicationUserGymClass);
+
+            //var isAttending = gymClassAttendees.Any(a => a.ApplicationUserId == userId);
+
+            //if (isAttending)
+            if(attending==null)
+            {
+                //var applicationUserGymClass = gymClassAttendees.Where(a => a.ApplicationUserId == userId).FirstOrDefault();
+                //_context.Remove(applicationUserGymClass);
+
+                _context.Remove(attending);
                 await _context.SaveChangesAsync();
             }
-            else { 
-            var applicationUserGymClass = new ApplicationUserGymClass
+            else
             {
-                ApplicationUserId = userId,
-                GymClassId = id.GetValueOrDefault(),
-            };
+                var applicationUserGymClass = new ApplicationUserGymClass
+                {
+                    ApplicationUserId = userId,
+                    GymClassId = id.GetValueOrDefault(),
+                };
 
-            _context.Add(applicationUserGymClass);
-            await _context.SaveChangesAsync();
-            } 
-            //return View(nameof(Index),await _context.GymClasses.ToListAsync());
+                _context.Add(applicationUserGymClass);
+                await _context.SaveChangesAsync();
+            }
             return RedirectToAction(nameof(Index));
         }
     }

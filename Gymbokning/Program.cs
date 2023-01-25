@@ -3,12 +3,7 @@ using Booking.Data.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
-namespace Booking.Web
-{
-    public class Program
-    {
-        public static void Main(string[] args)
-        {
+
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
@@ -25,6 +20,25 @@ namespace Booking.Web
             builder.Services.AddControllersWithViews();
 
             var app = builder.Build();
+
+            using (var scope = app.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+
+                //db.Database.EnsureDeleted();
+                //db.Database.Migrate();
+
+                try
+                {
+                    await SeedData.InitAsync(db);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                    throw;
+                }
+            }
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
@@ -51,6 +65,3 @@ namespace Booking.Web
             app.MapRazorPages();
 
             app.Run();
-        }
-    }
-}

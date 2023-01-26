@@ -32,6 +32,7 @@ namespace Booking.Data.Data
             //if (db.GymClasses.Any()) return;
             //var classes = GenerateClasses(10);
         }
+
         private static List<GymClass> GenerateClasses(int amount)
         {
             Random rnd = new();
@@ -72,17 +73,6 @@ namespace Booking.Data.Data
             return fakes;
         }
 
-        //private static async Task NewRoleAsync(IServiceProvider services, string name)
-        //{
-        //    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-
-        //    var roleExists = await roleManager.RoleExistsAsync(name);
-        //    if (!roleExists)
-        //    {
-        //        await roleManager.CreateAsync(new IdentityRole() { Name = name });
-        //    }
-        //}
-
         private static async Task<IdentityRole> NewRoleAsync(IServiceProvider services, string name)
         {
             var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
@@ -97,14 +87,12 @@ namespace Booking.Data.Data
                 await roleManager.CreateAsync(new IdentityRole() { Name = name });
                 return new IdentityRole();
             }
-            
         }
 
-        //private static async Task NewUsers(IServiceProvider services, List<ApplicationUser> users)
         private static async Task NewUsersAsync(IServiceProvider services, List<ApplicationUser> users, string role)
         {
             var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-            var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+            //var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
 
             foreach (var u in users)
             {
@@ -122,22 +110,5 @@ namespace Booking.Data.Data
             }
             
         }
-        //private static IdentityRole IdentityRole()
-        //{
-        //    var guid = Guid.NewGuid().ToString();
-        //    var faker = new Faker<IdentityRole>()
-        //    .UseSeed(1020)
-        //    .RuleFor(o => o.Name, f => f.Lorem.Word())
-        //    .RuleFor(o => o.NormalizedName, (f, u) => u.Name.ToUpper())
-        //    .RuleFor(o => o.Id, f => guid)
-        //    .RuleFor(o => o.ConcurrencyStamp, f => guid)
-        //    ;
-
-        //    var fakes = faker.Generate();
-
-        //    return fakes;
-        //}
-
-
     }
 }

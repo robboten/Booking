@@ -38,6 +38,7 @@ namespace Booking.Web.Controllers
         }
 
         // GET: GymClasses/Details/5
+        [Authorize]
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null || _context.GymClasses == null)
@@ -57,7 +58,9 @@ namespace Booking.Web.Controllers
             return View(gymClass);
         }
 
+
         // GET: GymClasses/Create
+        [Authorize(Roles = "Admin")]
         public IActionResult Create()
         {
             return Request.IsAjax() ? PartialView("CreateGymClassPartial") : View();
@@ -68,6 +71,7 @@ namespace Booking.Web.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create(GymClass gymClass)
         {
             if (ModelState.IsValid)
@@ -75,7 +79,7 @@ namespace Booking.Web.Controllers
                 _context.Add(gymClass);
                 await _context.SaveChangesAsync();
                 return Request.IsAjax() ? 
-                    PartialView("GymClassesPartial", await _context.GymClasses.ToListAsync()) : 
+                    PartialView("GymClassPartial", gymClass) : 
                     RedirectToAction(nameof(Index));
             }
             if (Request.IsAjax())
@@ -86,8 +90,9 @@ namespace Booking.Web.Controllers
             return View(gymClass);
         }
 
-        [Authorize]
+
         // GET: GymClasses/Edit/5
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null || _context.GymClasses == null)
@@ -102,12 +107,14 @@ namespace Booking.Web.Controllers
             }
             return View(gymClass);
         }
-        [Authorize]
+
+
         // POST: GymClasses/Edit/5
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(int id, GymClass gymClass)
         {
             if (id != gymClass.Id)
@@ -137,8 +144,10 @@ namespace Booking.Web.Controllers
             }
             return View(gymClass);
         }
-        [Authorize]
+
+
         // GET: GymClasses/Delete/5
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null || _context.GymClasses == null)
@@ -155,10 +164,11 @@ namespace Booking.Web.Controllers
 
             return View(gymClass);
         }
-        [Authorize]
+
         // POST: GymClasses/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             if (_context.GymClasses == null)
@@ -175,18 +185,7 @@ namespace Booking.Web.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        private bool GymClassExists(int id)
-        {
-            return (_context.GymClasses?.Any(e => e.Id == id)).GetValueOrDefault();
-        }
 
-
-
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
-        {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-        }
         [Authorize]
         public async Task<IActionResult> BookingToggle(int? id)
         {
@@ -232,6 +231,17 @@ namespace Booking.Web.Controllers
                 await _context.SaveChangesAsync();
             }
             return RedirectToAction(nameof(Index));
+        }
+
+        private bool GymClassExists(int id)
+        {
+            return (_context.GymClasses?.Any(e => e.Id == id)).GetValueOrDefault();
+        }
+
+        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+        public IActionResult Error()
+        {
+            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
     }
 }

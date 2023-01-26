@@ -3,12 +3,17 @@
 
 // Write your JavaScript code.
 let createform_el = document.querySelector('#createform');
-function fail() {
+function fail(response) {
     //todo
-    console.log('Model error...');
+    console.log(response, 'Model error...');
+    createform_el.innerHTML = response.responseText;
 }
 
-function RemoveForm() {
+function removeForm() {
     //$('#createform').html = "";
     createform_el.innerHTML="";
+}
+function addvalidation() {
+    const form = createform_el.querySelector('form');
+    $.validator.unobtrusive.parse(form);
 }

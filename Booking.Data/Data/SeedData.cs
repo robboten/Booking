@@ -1,31 +1,46 @@
 ﻿using Bogus;
 using Booking.Core.Entities;
-using Booking.Data.Migrations;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
-using System.Data;
-using static System.Formats.Asn1.AsnWriter;
 
 namespace Booking.Data.Data
 {
     public class SeedData
     {
-        private IServiceProvider _services { get; set; }
+        private static IServiceProvider _services { get; set; }
+        private static UserManager<ApplicationUser> _userManager { get; set; }
+        private static RoleManager<IdentityRole> _roleManager { get; set; }
         public static async Task InitAsync(IServiceProvider services)
         {
-            //_services = services;
+            _services = services;
+            _userManager = _services.GetRequiredService<UserManager<ApplicationUser>>();
+            _roleManager = _services.GetRequiredService<RoleManager<IdentityRole>>();
 
             //generate roles
-            var adminRole = await NewRoleAsync(services, "Admin");
-            var memberRole= await NewRoleAsync(services, "Member");
+            var adminRole = await NewRoleAsync("Admin");
+            var memberRole = await NewRoleAsync("Member");
 
             //generate members and assign to a role
             var members = GenerateMembers(4);
-            await NewUsersAsync(services, members, memberRole.Name!);
+            await NewUsersAsync(members, memberRole.Name!);
 
-            //? admin@Gymbokning.se ?
-            var admins = GenerateMembers(2);
-            await NewUsersAsync(services, admins, adminRole.Name!);
+            //var randomadmins = GenerateMembers(2);
+            //await NewUsersAsync(randomadmins, adminRole.Name!);
+
+            //should maybe make NewUserAsync too...??
+            var admins = new List<ApplicationUser>
+            {
+                new ApplicationUser
+                {
+                    Email="admin@Gymbokning.se",
+                    UserName="admin@Gymbokning.se",
+                    FirstName="Administra",
+                    LastName="Tion",
+                    EmailConfirmed=true
+                }
+            };
+
+            await NewUsersAsync(admins, adminRole.Name!, "Qwerty!23");
 
             //generate classes
             //var db = services.GetRequiredService<ApplicationDbContext>();
@@ -42,7 +57,6 @@ namespace Booking.Data.Data
                 //.UseSeed(1020)
                 .RuleFor(o => o.Name, f => f.Lorem.Word())
                 .RuleFor(o => o.StartTime, f => f.Date.Soon())
-                //.RuleFor(o => o.Duration, f => f.Date.Timespan())
                 .RuleFor(o => o.Duration, f => new TimeSpan(0, 0, mins, 0))
                 .RuleFor(o => o.Description, f => f.Lorem.Sentence())
                 ;
@@ -73,42 +87,38 @@ namespace Booking.Data.Data
             return fakes;
         }
 
-        private static async Task<IdentityRole> NewRoleAsync(IServiceProvider services, string name)
+        private static async Task<IdentityRole> NewRoleAsync(string name)
         {
-            var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-            var roleExists = await roleManager.FindByNameAsync(name);
+            var roleExists = await _roleManager.FindByNameAsync(name);
 
-            if (roleExists!=null)
+            if (roleExists != null)
             {
                 return roleExists;
             }
             else
             {
-                await roleManager.CreateAsync(new IdentityRole() { Name = name });
+                await _roleManager.CreateAsync(new IdentityRole() { Name = name });
                 return new IdentityRole();
             }
         }
 
-        private static async Task NewUsersAsync(IServiceProvider services, List<ApplicationUser> users, string role)
+        private static async Task NewUsersAsync(List<ApplicationUser> users, string role, string password = "")
         {
-            var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-            //var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-
             foreach (var u in users)
             {
-                var user = await userManager.FindByIdAsync(u.Id);
-                var psw = new Faker().Internet.Password();
+                var user = await _userManager.FindByIdAsync(u.Id);
 
                 if (user == null)
                 {
-                    var result = await userManager.CreateAsync(u,psw);
+                    var psw = password == "" ? new Faker().Internet.Password() : password;
+                    var result = await _userManager.CreateAsync(u, psw);
                     if (result.Succeeded)
                     {
-                        await userManager.AddToRoleAsync(u, role);
+                        await _userManager.AddToRoleAsync(u, role);
                     }
                 }
             }
-            
+
         }
     }
 }

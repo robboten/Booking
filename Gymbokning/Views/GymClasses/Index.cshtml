@@ -8,7 +8,10 @@
 <h1>Index</h1>
 
 <div id="createform"></div>
+@if (User.IsInRole("Admin"))
+{
 <p>
+
     <a asp-action="Create">Create New</a>
     <a asp-action="Create" 
     data-ajax="true" 
@@ -18,6 +21,7 @@
     data-ajax-success="addvalidation"
     class="btn btn-dark">Create</a>
 </p>
+    }
 <table class="table">
     <thead>
         <tr>

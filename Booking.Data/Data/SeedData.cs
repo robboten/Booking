@@ -32,8 +32,8 @@ namespace Booking.Data.Data
             {
                 new ApplicationUser
                 {
-                    Email="admin@Gymbokning.se",
-                    UserName="admin@Gymbokning.se",
+                    Email="admin@gymbokning.se",
+                    UserName="admin@gymbokning.se",
                     FirstName="Administra",
                     LastName="Tion",
                     EmailConfirmed=true

@@ -1,26 +1,32 @@
 ﻿@model Booking.Core.Entities.GymClass
-        <tr>
-            <td>
+<tr>
+    <td>
         @Html.DisplayFor(item => item.Name)
-            </td>
-            <td>
+    </td>
+    <td>
         @Html.DisplayFor(item => item.StartTime)
-            </td>
-            <td>
+    </td>
+    <td>
         @Html.DisplayFor(item => item.Duration)
-            </td>
-            <td>
+    </td>
+    <td>
         @Html.DisplayFor(item => item.Description)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@Model.Id">Edit</a> |
-                <a asp-action="Details" asp-route-id="@Model.Id">Details</a> |
-                <a asp-action="Delete" asp-route-id="@Model.Id">Delete</a>
-                @if (User.Identity.IsAuthenticated)
-                {
-                    <span> | </span>
-                    <a asp-action="BookingToggle" asp-route-id="@Model.Id">Book/Unbook</a>
-                }
+    </td>
+    <td>
+        @if (User.IsInRole("Admin"))
+        {
+            <a asp-action="Edit" asp-route-id="@Model.Id">Edit</a>
+            <span> | </span>
+            <a asp-action="Delete" asp-route-id="@Model.Id">Delete</a>
+            <span> | </span>
+        }
 
-            </td>
-        </tr>
+        @if (User.Identity.IsAuthenticated)
+        {
+            <a asp-action="Details" asp-route-id="@Model.Id">Details</a>
+            <span> | </span>
+            <a asp-action="BookingToggle" asp-route-id="@Model.Id">Book/Unbook</a>
+        }
+
+    </td>
+</tr>

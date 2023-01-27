@@ -61,8 +61,6 @@ namespace Booking.Data.Data
             builder.Entity<ApplicationUser>().Property<DateTime>("TimeOfRegistration");
             base.OnModelCreating(builder);
             builder.Entity<ApplicationUserGymClass>().HasKey(a => new { a.ApplicationUserId, a.GymClassId });
-
-
         }
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {

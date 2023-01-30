@@ -1,5 +1,6 @@
 using Booking.Core.Entities;
 using Booking.Data.Data;
+using Booking.Web.Extensions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -29,24 +30,7 @@ builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
-{
-
-    var services = scope.ServiceProvider;
-    //var db = services.GetRequiredService<ApplicationDbContext>();
-    //db.Database.EnsureDeleted();
-    //db.Database.Migrate();
-
-    try
-    {
-        await SeedData.InitAsync(services);
-    }
-    catch (Exception e)
-    {
-        Console.WriteLine(e.Message);
-        throw;
-    }
-}
+await app.SeedDataAsync();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

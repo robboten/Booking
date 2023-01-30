@@ -207,7 +207,6 @@ namespace Booking.Web.Controllers
 
             var attending = await _context.GymClasses.FindAsync(id);
 
-
             //var isAttending = gymClassAttendees.Any(a => a.ApplicationUserId == userId);
 
             //if (isAttending)

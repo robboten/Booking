@@ -1,20 +1,26 @@
 ﻿using Bogus;
 using Booking.Core.Entities;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Booking.Data.Data
 {
     public class SeedData
     {
-        private static IServiceProvider _services { get; set; }
-        private static UserManager<ApplicationUser> _userManager { get; set; }
-        private static RoleManager<IdentityRole> _roleManager { get; set; }
+        private static IServiceProvider _services { get; set; } = default!;
+        private static UserManager<ApplicationUser> _userManager { get; set; } = default!;
+        private static RoleManager<IdentityRole> _roleManager { get; set; } = default!;
+
         public static async Task InitAsync(IServiceProvider services)
         {
+            if(services is null) throw new ArgumentNullException(nameof(services));
+
             _services = services;
             _userManager = _services.GetRequiredService<UserManager<ApplicationUser>>();
+            ArgumentNullException.ThrowIfNull(nameof(_userManager));
             _roleManager = _services.GetRequiredService<RoleManager<IdentityRole>>();
+            ArgumentNullException.ThrowIfNull(nameof(_roleManager));
 
             //generate roles
             var adminRole = await NewRoleAsync("Admin");
@@ -24,6 +30,7 @@ namespace Booking.Data.Data
             var members = GenerateMembers(4);
             await NewUsersAsync(members, memberRole.Name!);
 
+            //generate admins
             //var randomadmins = GenerateMembers(2);
             //await NewUsersAsync(randomadmins, adminRole.Name!);
 
@@ -40,7 +47,12 @@ namespace Booking.Data.Data
                 }
             };
 
-            await NewUsersAsync(admins, adminRole.Name!, "Qwerty!23");
+            //dotnet user-secrets set "AdminPW" "Qwerty!23"
+            var config = services.GetRequiredService<IConfiguration>();
+            var adminPW = config["AdminPW"];
+            ArgumentNullException.ThrowIfNull(adminPW);
+
+            await NewUsersAsync(admins, adminRole.Name!, adminPW);
 
             //generate classes
             //var db = services.GetRequiredService<ApplicationDbContext>();

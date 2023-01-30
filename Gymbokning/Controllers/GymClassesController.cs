@@ -1,5 +1,6 @@
 ﻿using Booking.Core.Entities;
 using Booking.Data.Data;
+using Booking.Data.Repositories;
 using Booking.Web.Extensions;
 using Booking.Web.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -14,48 +15,30 @@ namespace Booking.Web.Controllers
 {
     public class GymClassesController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        //private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IUnitOfWork _uow;
 
-        public GymClassesController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
+        public GymClassesController(ApplicationDbContext context, UserManager<ApplicationUser> userManager, IUnitOfWork unitOfWork)
         {
-            _context = context;
+            //_context = context;
             _userManager = userManager;
+            _uow= unitOfWork;
 
         }
 
         // GET: GymClasses
+        [AllowAnonymous]
         public async Task<IActionResult> Index()
         {
-            if (User.Identity.IsAuthenticated)
-            {
-                Console.WriteLine(User.Identity.Name);
-            }
-
-            return _context.GymClasses != null ?
-                          View(await _context.GymClasses.ToListAsync()) :
-                          Problem("Entity set 'ApplicationDbContext.GymClasses'  is null.");
+            return View(await _uow.GymClassRepository.GetAsync());
         }
 
         // GET: GymClasses/Details/5
         [Authorize]
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null || _context.GymClasses == null)
-            {
-                return NotFound();
-            }
-
-            var gymClass = await _context.GymClasses
-                .Include(c => c.AttendingMembers).ThenInclude(m => m.ApplicationUser)
-                .FirstOrDefaultAsync(m => m.Id == id);
-
-            if (gymClass == null)
-            {
-                return NotFound();
-            }
-
-            return View(gymClass);
+            return View(await _uow.GymClassRepository.GetWithAttendingAsync((int)id!));
         }
 
 
@@ -76,8 +59,8 @@ namespace Booking.Web.Controllers
         {
             if (ModelState.IsValid)
             {
-                _context.Add(gymClass);
-                await _context.SaveChangesAsync();
+                _uow.GymClassRepository.Add(gymClass);
+                await _uow.CompleteAsync();
                 return Request.IsAjax() ? 
                     PartialView("GymClassPartial", gymClass) : 
                     RedirectToAction(nameof(Index));
@@ -95,17 +78,7 @@ namespace Booking.Web.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null || _context.GymClasses == null)
-            {
-                return NotFound();
-            }
-
-            var gymClass = await _context.GymClasses.FindAsync(id);
-            if (gymClass == null)
-            {
-                return NotFound();
-            }
-            return View(gymClass);
+            return View(await _uow.GymClassRepository.GetAsync((int)id!));
         }
 
 
@@ -126,8 +99,8 @@ namespace Booking.Web.Controllers
             {
                 try
                 {
-                    _context.Update(gymClass);
-                    await _context.SaveChangesAsync();
+                    _uow.GymClassRepository.Update(gymClass);
+                    await _uow.CompleteAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -150,19 +123,7 @@ namespace Booking.Web.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null || _context.GymClasses == null)
-            {
-                return NotFound();
-            }
-
-            var gymClass = await _context.GymClasses
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (gymClass == null)
-            {
-                return NotFound();
-            }
-
-            return View(gymClass);
+            return View(await _uow.GymClassRepository.GetAsync((int)id!));
         }
 
         // POST: GymClasses/Delete/5
@@ -171,17 +132,13 @@ namespace Booking.Web.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            if (_context.GymClasses == null)
-            {
-                return Problem("Entity set 'ApplicationDbContext.GymClasses'  is null.");
-            }
-            var gymClass = await _context.GymClasses.FindAsync(id);
+            var gymClass = await _uow.GymClassRepository.GetAsync(id);
             if (gymClass != null)
             {
-                _context.GymClasses.Remove(gymClass);
+                _uow.GymClassRepository.Remove(gymClass);
             }
 
-            await _context.SaveChangesAsync();
+            await _uow.CompleteAsync();
             return RedirectToAction(nameof(Index));
         }
 
@@ -191,34 +148,22 @@ namespace Booking.Web.Controllers
         {
             if (id == null) return NotFound();
 
-            var gymClass = await _context.GymClasses
-                .Include(c => c.AttendingMembers)
-                .FirstOrDefaultAsync(c => c.Id == id);
+            //get the gymclass with attendees
+            var gymClass = await _uow.GymClassRepository.GetWithAttendingAsync((int)id!);
 
             if (gymClass == null)
             {
                 return NotFound();
             }
+
+            //get user id from user manager
             var userId = _userManager.GetUserId(User);
-            //var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId == null) { return BadRequest(); }
 
-            //var gymClassAttendees = gymClass.AttendingMembers;
 
-            var attending = await _context.GymClasses.FindAsync(id);
+            var attending = await _uow.ApplicationUserGymClassRepository.FindAsync(userId,(int)id!);
 
-            //var isAttending = gymClassAttendees.Any(a => a.ApplicationUserId == userId);
-
-            //if (isAttending)
             if(attending==null)
-            {
-                //var applicationUserGymClass = gymClassAttendees.Where(a => a.ApplicationUserId == userId).FirstOrDefault();
-                //_context.Remove(applicationUserGymClass);
-
-                _context.Remove(attending);
-                await _context.SaveChangesAsync();
-            }
-            else
             {
                 var applicationUserGymClass = new ApplicationUserGymClass
                 {
@@ -226,15 +171,21 @@ namespace Booking.Web.Controllers
                     GymClassId = id.GetValueOrDefault(),
                 };
 
-                _context.Add(applicationUserGymClass);
-                await _context.SaveChangesAsync();
+                _uow.ApplicationUserGymClassRepository.Add(applicationUserGymClass);
+                await _uow.CompleteAsync();
+
+            }
+            else
+            {
+                _uow.ApplicationUserGymClassRepository.Remove(attending);
+                await _uow.CompleteAsync();
             }
             return RedirectToAction(nameof(Index));
         }
 
         private bool GymClassExists(int id)
         {
-            return (_context.GymClasses?.Any(e => e.Id == id)).GetValueOrDefault();
+            return (_uow.GymClassRepository.Exists(id));
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

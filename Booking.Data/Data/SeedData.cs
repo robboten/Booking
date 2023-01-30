@@ -1,6 +1,7 @@
 ﻿using Bogus;
 using Booking.Core.Entities;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -8,27 +9,29 @@ namespace Booking.Data.Data
 {
     public class SeedData
     {
-        private static IServiceProvider _services { get; set; } = default!;
-        private static UserManager<ApplicationUser> _userManager { get; set; } = default!;
-        private static RoleManager<IdentityRole> _roleManager { get; set; } = default!;
+        private static IServiceProvider Services { get; set; } = default!;
+        private static UserManager<ApplicationUser> UserManager { get; set; } = default!;
+        private static RoleManager<IdentityRole> RoleManager { get; set; } = default!;
 
         public static async Task InitAsync(IServiceProvider services)
         {
             if(services is null) throw new ArgumentNullException(nameof(services));
 
-            _services = services;
-            _userManager = _services.GetRequiredService<UserManager<ApplicationUser>>();
-            ArgumentNullException.ThrowIfNull(nameof(_userManager));
-            _roleManager = _services.GetRequiredService<RoleManager<IdentityRole>>();
-            ArgumentNullException.ThrowIfNull(nameof(_roleManager));
+            Services = services;
+            UserManager = Services.GetRequiredService<UserManager<ApplicationUser>>();
+            ArgumentNullException.ThrowIfNull(nameof(UserManager));
+            RoleManager = Services.GetRequiredService<RoleManager<IdentityRole>>();
+            ArgumentNullException.ThrowIfNull(nameof(RoleManager));
+
+            DeleteDb();
 
             //generate roles
-            var adminRole = await NewRoleAsync("Admin");
-            var memberRole = await NewRoleAsync("Member");
+            await NewRoleAsync("Admin");
+            await NewRoleAsync("Member");
 
             //generate members and assign to a role
             var members = GenerateMembers(4);
-            await NewUsersAsync(members, memberRole.Name!);
+            await NewUsersAsync(members, "Member");
 
             //generate admins
             //var randomadmins = GenerateMembers(2);
@@ -52,12 +55,18 @@ namespace Booking.Data.Data
             var adminPW = config["AdminPW"];
             ArgumentNullException.ThrowIfNull(adminPW);
 
-            await NewUsersAsync(admins, adminRole.Name!, adminPW);
+            await NewUsersAsync(admins, "Admin", adminPW);
 
             //generate classes
-            //var db = services.GetRequiredService<ApplicationDbContext>();
-            //if (db.GymClasses.Any()) return;
-            //var classes = GenerateClasses(10);
+            var classes = GenerateClasses(10);
+            await NewClasses(classes);
+        }
+
+        private static void DeleteDb()
+        {
+            var db = Services.GetRequiredService<ApplicationDbContext>();
+            db.Database.EnsureDeleted();
+            db.Database.Migrate();
         }
 
         private static List<GymClass> GenerateClasses(int amount)
@@ -67,7 +76,7 @@ namespace Booking.Data.Data
 
             var faker = new Faker<GymClass>()
                 //.UseSeed(1020)
-                .RuleFor(o => o.Name, f => f.Lorem.Word())
+                .RuleFor(o => o.Name, f => f.Name.JobTitle())
                 .RuleFor(o => o.StartTime, f => f.Date.Soon())
                 .RuleFor(o => o.Duration, f => new TimeSpan(0, 0, mins, 0))
                 .RuleFor(o => o.Description, f => f.Lorem.Sentence())
@@ -76,6 +85,15 @@ namespace Booking.Data.Data
             var fakes = faker.Generate(amount);
 
             return fakes;
+        }
+
+        private static async Task NewClasses(List<GymClass> gymClasses)
+        {
+            var db = Services.GetRequiredService<ApplicationDbContext>();
+            //if (db.GymClasses.Any()) return;
+
+            db.AddRange(gymClasses);
+            await db.SaveChangesAsync();
         }
 
         private static List<ApplicationUser> GenerateMembers(int amount)
@@ -94,23 +112,16 @@ namespace Booking.Data.Data
                 .RuleFor(o => o.LastName, f => f.Name.LastName())
                 ;
 
-            var fakes = faker.Generate(amount);
-
-            return fakes;
+                var fakes = faker.Generate(amount);
+                return fakes;
         }
 
-        private static async Task<IdentityRole> NewRoleAsync(string name)
+        private static async Task NewRoleAsync(string name)
         {
-            var roleExists = await _roleManager.FindByNameAsync(name);
-
-            if (roleExists != null)
+            var roleExists = await RoleManager.FindByNameAsync(name);
+            if (roleExists == null)
             {
-                return roleExists;
-            }
-            else
-            {
-                await _roleManager.CreateAsync(new IdentityRole() { Name = name });
-                return new IdentityRole();
+                await RoleManager.CreateAsync(new IdentityRole() { Name = name });
             }
         }
 
@@ -118,15 +129,15 @@ namespace Booking.Data.Data
         {
             foreach (var u in users)
             {
-                var user = await _userManager.FindByIdAsync(u.Id);
+                var user = await UserManager.FindByIdAsync(u.Id);
 
                 if (user == null)
                 {
                     var psw = password == "" ? new Faker().Internet.Password() : password;
-                    var result = await _userManager.CreateAsync(u, psw);
+                    var result = await UserManager.CreateAsync(u, psw);
                     if (result.Succeeded)
                     {
-                        await _userManager.AddToRoleAsync(u, role);
+                        await UserManager.AddToRoleAsync(u, role);
                     }
                 }
             }

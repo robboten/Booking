@@ -1,7 +1,10 @@
 using Booking.Core.Entities;
 using Booking.Data.Data;
+using Booking.Data.Repositories;
 using Booking.Web.Extensions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -16,6 +19,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
 builder.Services
     .AddDefaultIdentity<ApplicationUser>(options =>
     {
@@ -26,11 +31,33 @@ builder.Services
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
-builder.Services.AddControllersWithViews();
+//builder.Services.AddControllersWithViews(options =>
+//{
+//    // options.Filters.Add<AuthorizeFilter>();
+
+//    var policy = new AuthorizationPolicyBuilder()
+//                        .RequireAuthenticatedUser()
+////                        .RequireRole("Member")
+//                        .Build();
+
+//    options.Filters.Add(new AuthorizeFilter(policy));
+
+//    options.ModelBindingMessageProvider.SetValueMustNotBeNullAccessor(_ => "The field is required");
+//});
+
+
+//builder.Services.AddAuthorization(opt =>
+//{
+//    opt.AddPolicy("Test", policy =>
+//    {
+//        policy.RequireRole("Admin");
+//        policy.RequireClaim("Test");
+//    });
+//});
 
 var app = builder.Build();
 
-await app.SeedDataAsync();
+//await app.SeedDataAsync();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

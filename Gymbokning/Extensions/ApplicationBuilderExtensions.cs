@@ -1,27 +1,24 @@
-﻿namespace Booking.Web.Extensions
+﻿using Booking.Data.Data;
+
+namespace Booking.Web.Extensions
 {
     public static class ApplicationBuilderExtensions
     {
         public static async Task SeedDataAsync(this IApplicationBuilder app)
         {
-            using (var scope = app.ApplicationServices.CreateScope())
+            using var scope = app.ApplicationServices.CreateScope();
+
+            var services = scope.ServiceProvider;
+
+
+            try
             {
-
-                var services = scope.ServiceProvider;
-                //var db = services.GetRequiredService<ApplicationDbContext>();
-                //db.Database.EnsureDeleted();
-                //db.Database.Migrate();
-
-
-                try
-                {
-                    //await SeedData.InitAsync(services);
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e.Message);
-                    throw;
-                }
+                await SeedData.InitAsync(services);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                throw;
             }
 
         }

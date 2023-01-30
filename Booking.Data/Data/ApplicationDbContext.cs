@@ -10,13 +10,13 @@ namespace Booking.Data.Data
 {
     public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityRole, string>
     {
+        public DbSet<GymClass> GymClasses { get; set; } = default!;
+        public DbSet<ApplicationUserGymClass> ApplicationUserGymClass => Set<ApplicationUserGymClass>();
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
         {
 
         }
-        public DbSet<GymClass> GymClasses { get; set; } = default!;
-
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

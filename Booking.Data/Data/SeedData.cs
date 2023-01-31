@@ -15,7 +15,7 @@ namespace Booking.Data.Data
 
         public static async Task InitAsync(IServiceProvider services)
         {
-            if(services is null) throw new ArgumentNullException(nameof(services));
+            if (services is null) throw new ArgumentNullException(nameof(services));
 
             Services = services;
             UserManager = Services.GetRequiredService<UserManager<ApplicationUser>>();
@@ -23,39 +23,43 @@ namespace Booking.Data.Data
             RoleManager = Services.GetRequiredService<RoleManager<IdentityRole>>();
             ArgumentNullException.ThrowIfNull(nameof(RoleManager));
 
-            DeleteDb();
+            //DeleteDb();
 
             //generate roles
             await NewRoleAsync("Admin");
             await NewRoleAsync("Member");
 
             //generate members and assign to a role
-            var members = GenerateMembers(4);
-            await NewUsersAsync(members, "Member");
+            var members = GenerateMembers(5);
+            //await NewUsersAsync(members, "Member");
+
+            foreach (var m in members)
+            {
+                await NewUserAsync(m, "Member");
+            }
 
             //generate admins
             //var randomadmins = GenerateMembers(2);
             //await NewUsersAsync(randomadmins, adminRole.Name!);
 
             //should maybe make NewUserAsync too...??
-            var admins = new List<ApplicationUser>
-            {
+            var admin =
                 new ApplicationUser
                 {
-                    Email="admin@gymbokning.se",
-                    UserName="admin@gymbokning.se",
-                    FirstName="Administra",
-                    LastName="Tion",
-                    EmailConfirmed=true
-                }
-            };
+                    Email = "admin@gymbokning.se",
+                    UserName = "admin@gymbokning.se",
+                    FirstName = "Administra",
+                    LastName = "Tion",
+                    EmailConfirmed = true
+
+                };
 
             //dotnet user-secrets set "AdminPW" "Qwerty!23"
             var config = services.GetRequiredService<IConfiguration>();
             var adminPW = config["AdminPW"];
             ArgumentNullException.ThrowIfNull(adminPW);
 
-            await NewUsersAsync(admins, "Admin", adminPW);
+            await NewUserAsync(admin, "Admin", adminPW);
 
             //generate classes
             var classes = GenerateClasses(10);
@@ -103,7 +107,7 @@ namespace Booking.Data.Data
             var faker = new Faker<ApplicationUser>()
                 //.UseSeed(1020)
                 //.RuleFor(o => o.Id, f => f.Random.Guid().ToString())
-                .RuleFor(o => o.Email, f => f.Internet.Email())
+                .RuleFor(o => o.Email, f => f.Internet.Email().ToLower())
                 //.RuleFor(o => o.NormalizedEmail, (f, u) => u.Email.ToUpper())
                 .RuleFor(o => o.UserName, (f, u) => u.Email)
                 //.RuleFor(o => o.NormalizedUserName, (f, u) => u.Email.ToUpper())
@@ -112,8 +116,8 @@ namespace Booking.Data.Data
                 .RuleFor(o => o.LastName, f => f.Name.LastName())
                 ;
 
-                var fakes = faker.Generate(amount);
-                return fakes;
+            var fakes = faker.Generate(amount);
+            return fakes;
         }
 
         private static async Task NewRoleAsync(string name)
@@ -122,6 +126,20 @@ namespace Booking.Data.Data
             if (roleExists == null)
             {
                 await RoleManager.CreateAsync(new IdentityRole() { Name = name });
+            }
+        }
+
+        private static async Task NewUserAsync(ApplicationUser user, string role, string password = "")
+        {
+
+            if (await UserManager.FindByIdAsync(user.Id) == null)
+            {
+                var psw = password == "" ? new Faker().Internet.Password() : password;
+                var result = await UserManager.CreateAsync(user, psw);
+                if (result.Succeeded)
+                {
+                    await UserManager.AddToRoleAsync(user, role);
+                }
             }
         }
 
@@ -141,7 +159,6 @@ namespace Booking.Data.Data
                     }
                 }
             }
-
         }
     }
 }

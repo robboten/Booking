@@ -31,7 +31,7 @@ namespace Booking.Data.Repositories
         }
         public async Task<IEnumerable<GymClass>> GetWithAttendingAsync()
         {
-            return await _db.GymClasses.Include(c => c.AttendingMembers).ThenInclude(m => m.ApplicationUser).ToListAsync();
+            return await _db.GymClasses.Include(c => c.AttendingMembers).ThenInclude(m => m.ApplicationUser).Where(c => c.StartTime > DateTime.Now).ToListAsync();
         }
 
         public async Task<GymClass?> GetWithAttendingAsync(int id)
@@ -55,6 +55,15 @@ namespace Booking.Data.Repositories
         public bool Exists(int id)
         {
             return _db.GymClasses.Any(e => e.Id == id);
+        }
+
+        public async Task<IEnumerable<GymClass>> GetHistoryAsync()
+        {
+            return await _db.GymClasses
+                .Include(c=>c.AttendingMembers)
+                .IgnoreQueryFilters()
+                .Where(c=>c.StartTime< DateTime.Now)
+                .ToListAsync();
         }
     }
 }

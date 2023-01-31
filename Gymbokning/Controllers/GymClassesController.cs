@@ -27,32 +27,25 @@ namespace Booking.Web.Controllers
         {
             //_context = context;
             _userManager = userManager;
-            _uow= unitOfWork;
+            _uow = unitOfWork;
             _mapper = mapper;
 
         }
 
         // GET: GymClasses
         [AllowAnonymous]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(IndexViewModel viewModel)
         {
-            var gymClasses=await _uow.GymClassRepository.GetWithAttendingAsync();
-            var res= _mapper.Map<IEnumerable<GymClassViewModel>>(gymClasses);
+            if (User.Identity != null && !User.Identity.IsAuthenticated)
+                return View(_mapper.Map<IndexViewModel>(await _uow.GymClassRepository.GetAsync()));
 
-            //var userId = _userManager.GetUserId(User);
+            var gymClasses = viewModel.ShowHistory ?
+                await _uow.GymClassRepository.GetHistoryAsync()
+                :
+                await _uow.GymClassRepository.GetWithAttendingAsync()
+                ;
 
-            //var model = (await _uow.GymClassRepository.GetWithAttendingAsync())
-            //    .Select(c=>new GymClassViewModel
-            //    {
-            //        Id = c.Id,
-            //        Name = c.Name,
-            //        StartTime= c.StartTime,
-            //        Duration= c.Duration,
-            //        Attending = c.AttendingMembers.Any(a=>a.ApplicationUserId==userId)
-            //    }
-            //    ).ToList();
-
-            return View(res);
+            return View(_mapper.Map<IndexViewModel>(gymClasses));
         }
 
         // GET: GymClasses/Details/5
@@ -82,8 +75,8 @@ namespace Booking.Web.Controllers
             {
                 _uow.GymClassRepository.Add(gymClass);
                 await _uow.CompleteAsync();
-                return Request.IsAjax() ? 
-                    PartialView("GymClassPartial", gymClass) : 
+                return Request.IsAjax() ?
+                    PartialView("GymClassPartial", _mapper.Map<GymClassViewModel>(gymClass)) :
                     RedirectToAction(nameof(Index));
             }
             if (Request.IsAjax())
@@ -182,9 +175,9 @@ namespace Booking.Web.Controllers
             if (userId == null) { return BadRequest(); }
 
 
-            var attending = await _uow.ApplicationUserGymClassRepository.FindAsync(userId,(int)id!);
+            var attending = await _uow.ApplicationUserGymClassRepository.FindAsync(userId, (int)id!);
 
-            if(attending==null)
+            if (attending == null)
             {
                 var applicationUserGymClass = new ApplicationUserGymClass
                 {

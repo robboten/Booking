@@ -1,4 +1,4 @@
-﻿@model IEnumerable<GymClassViewModel>
+﻿@model IndexViewModel
 
 @{
     ViewData["Title"] = "Index";
@@ -21,17 +21,26 @@
        class="btn btn-dark">Create</a>
     </p>
 }
+@if (User.Identity.IsAuthenticated)
+{
+    <form asp-action="Index">
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" asp-for="ShowHistory" id="checkbox">
+            <label class="form-check-label" for="checkbox">Past classes</label>
+        </div>
+    </form>
+}
 <table class="table">
     <thead>
         <tr>
             <th>
-                @Html.DisplayNameFor(model => model.Name)
+                @Html.DisplayNameFor(model => model.GymClasses.First().Name)
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.StartTime)
+                @Html.DisplayNameFor(model => model.GymClasses.First().StartTime)
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.Duration)
+                @Html.DisplayNameFor(model => model.GymClasses.First().Duration)
             </th>
             @if (User.Identity.IsAuthenticated)
             {
@@ -40,6 +49,6 @@
         </tr>
     </thead>
     <tbody id="gymclasses">
-        <partial name="GymClassesPartial" />
+        <partial name="GymClassesPartial" model="@Model.GymClasses" />
     </tbody>
 </table>

@@ -12,6 +12,7 @@ namespace Booking.Core.Repositories
         void Remove(GymClass gymClass);
         bool Exists(int id);
         void Update(GymClass gymClass);
+        Task<IEnumerable<GymClass>> GetHistoryAsync();
     }
 
 }

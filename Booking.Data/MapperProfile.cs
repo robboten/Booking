@@ -19,6 +19,8 @@ namespace Booking.Data
             CreateMap<GymClass, GymClassViewModel>()
                 .ForMember(dest => dest.Attending, from => from.MapFrom<AttendingResolver>());
             ;
+            CreateMap<IEnumerable<GymClass>, IndexViewModel>()
+                .ForMember(dest=>dest.GymClasses, from=>from.MapFrom(g=>g.ToList()));
         }
     }
     public class AttendingResolver : IValueResolver<GymClass, GymClassViewModel, bool>

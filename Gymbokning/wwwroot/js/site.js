@@ -17,3 +17,6 @@ function addvalidation() {
     const form = createform_el.querySelector('form');
     $.validator.unobtrusive.parse(form);
 }
+$('#checkbox').click(function () {
+    $('form').submit();
+})

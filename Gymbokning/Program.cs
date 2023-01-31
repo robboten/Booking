@@ -1,4 +1,6 @@
 using Booking.Core.Entities;
+using Booking.Core.Repositories;
+using Booking.Data;
 using Booking.Data.Data;
 using Booking.Data.Repositories;
 using Booking.Web.Extensions;
@@ -54,6 +56,8 @@ builder.Services
 //        policy.RequireClaim("Test");
 //    });
 //});
+
+builder.Services.AddAutoMapper(typeof(MapperProfile));
 
 var app = builder.Build();
 

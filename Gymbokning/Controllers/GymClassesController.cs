@@ -1,6 +1,8 @@
-﻿using Booking.Core.Entities;
+﻿using AutoMapper;
+using Booking.Core.Entities;
+using Booking.Core.Repositories;
+using Booking.Core.ViewModels;
 using Booking.Data.Data;
-using Booking.Data.Repositories;
 using Booking.Web.Extensions;
 using Booking.Web.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -11,6 +13,7 @@ using Microsoft.Extensions.Configuration.UserSecrets;
 using System.Diagnostics;
 using System.Security.Claims;
 
+
 namespace Booking.Web.Controllers
 {
     public class GymClassesController : Controller
@@ -18,12 +21,14 @@ namespace Booking.Web.Controllers
         //private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IUnitOfWork _uow;
+        private readonly IMapper _mapper;
 
-        public GymClassesController(ApplicationDbContext context, UserManager<ApplicationUser> userManager, IUnitOfWork unitOfWork)
+        public GymClassesController(ApplicationDbContext context, UserManager<ApplicationUser> userManager, IUnitOfWork unitOfWork, IMapper mapper)
         {
             //_context = context;
             _userManager = userManager;
             _uow= unitOfWork;
+            _mapper = mapper;
 
         }
 
@@ -31,7 +36,23 @@ namespace Booking.Web.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> Index()
         {
-            return View(await _uow.GymClassRepository.GetAsync());
+            var gymClasses=await _uow.GymClassRepository.GetWithAttendingAsync();
+            //var res= _mapper.Map<IEnumerable<GymClassViewModel>>(gymClasses);
+
+            var userId = _userManager.GetUserId(User);
+
+            var model = (await _uow.GymClassRepository.GetWithAttendingAsync())
+                .Select(c=>new GymClassViewModel
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    StartTime= c.StartTime,
+                    Duration= c.Duration,
+                    Attending = c.AttendingMembers.Any(a=>a.ApplicationUserId==userId)
+                }
+                ).ToList();
+
+            return View(model);
         }
 
         // GET: GymClasses/Details/5

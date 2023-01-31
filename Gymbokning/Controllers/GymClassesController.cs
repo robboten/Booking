@@ -37,22 +37,22 @@ namespace Booking.Web.Controllers
         public async Task<IActionResult> Index()
         {
             var gymClasses=await _uow.GymClassRepository.GetWithAttendingAsync();
-            //var res= _mapper.Map<IEnumerable<GymClassViewModel>>(gymClasses);
+            var res= _mapper.Map<IEnumerable<GymClassViewModel>>(gymClasses);
 
-            var userId = _userManager.GetUserId(User);
+            //var userId = _userManager.GetUserId(User);
 
-            var model = (await _uow.GymClassRepository.GetWithAttendingAsync())
-                .Select(c=>new GymClassViewModel
-                {
-                    Id = c.Id,
-                    Name = c.Name,
-                    StartTime= c.StartTime,
-                    Duration= c.Duration,
-                    Attending = c.AttendingMembers.Any(a=>a.ApplicationUserId==userId)
-                }
-                ).ToList();
+            //var model = (await _uow.GymClassRepository.GetWithAttendingAsync())
+            //    .Select(c=>new GymClassViewModel
+            //    {
+            //        Id = c.Id,
+            //        Name = c.Name,
+            //        StartTime= c.StartTime,
+            //        Duration= c.Duration,
+            //        Attending = c.AttendingMembers.Any(a=>a.ApplicationUserId==userId)
+            //    }
+            //    ).ToList();
 
-            return View(model);
+            return View(res);
         }
 
         // GET: GymClasses/Details/5

@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading;
@@ -130,9 +131,14 @@ namespace Booking.Web.Areas.Identity.Pages.Account
                 await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
                 var result = await _userManager.CreateAsync(user, Input.Password);
 
+                //add claim
+                Claim claim = new("FullName", user.FirstName + " " + user.LastName, ClaimValueTypes.String);
+                var addClaimResult = await _userManager.AddClaimAsync(user, claim);
+
+                //add to role
                 var addToRoleResult = await _userManager.AddToRoleAsync(user, "Member");
 
-                if (result.Succeeded && addToRoleResult.Succeeded)
+                if (result.Succeeded && addToRoleResult.Succeeded && addClaimResult.Succeeded)
                 {
                     _logger.LogInformation("User created a new account with password.");
 

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using System.Security.Claims;
 
 namespace Booking.Data.Data
 {
@@ -123,6 +124,7 @@ namespace Booking.Data.Data
         private static async Task NewRoleAsync(string name)
         {
             var roleExists = await RoleManager.FindByNameAsync(name);
+
             if (roleExists == null)
             {
                 await RoleManager.CreateAsync(new IdentityRole() { Name = name });
@@ -134,10 +136,14 @@ namespace Booking.Data.Data
 
             if (await UserManager.FindByIdAsync(user.Id) == null)
             {
+                Claim claim = new("FullName", user.FullName, ClaimValueTypes.String);
+
                 var psw = password == "" ? new Faker().Internet.Password() : password;
                 var result = await UserManager.CreateAsync(user, psw);
                 if (result.Succeeded)
                 {
+                    
+                    await UserManager.AddClaimAsync(user, claim);
                     await UserManager.AddToRoleAsync(user, role);
                 }
             }

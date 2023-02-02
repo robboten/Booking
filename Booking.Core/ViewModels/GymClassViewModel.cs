@@ -1,11 +1,4 @@
-﻿using Booking.Core.Entities;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Linq;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace Booking.Core.ViewModels
 {
@@ -16,7 +9,7 @@ namespace Booking.Core.ViewModels
 
         [Display(Name = "Starting")]
         public DateTime StartTime { get; set; }
-        public TimeSpan Duration {  get; set;  }
+        public TimeSpan Duration { get; set; }
         public bool Attending { get; set; }
     }
 }

@@ -28,28 +28,11 @@ namespace Booking.Web.Controllers
         }
 
         // GET: Users/Details/5
-        public async Task<IActionResult> Details(int? id)
+        public async Task<IActionResult> Details(string id)
         {
-            throw new NotImplementedException();
+            var model = await _userManager.FindByIdAsync(id);
+            return View(model);
         }
-
-
-        // GET: Users/Create
-        public IActionResult Create()
-        {
-            return View();
-        }
-
-        // POST: Users/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(ApplicationUser user)
-        {
-            throw new NotImplementedException();
-        }
-
 
         // GET: Users/Edit/5
         public async Task<IActionResult> Edit(int? id)
@@ -70,17 +53,24 @@ namespace Booking.Web.Controllers
 
 
         // GET: Users/Delete/5
-        public async Task<IActionResult> Delete(int? id)
+        public async Task<IActionResult> Delete(string? id)
         {
-            throw new NotImplementedException();
+            var model = await _userManager.FindByIdAsync(id);
+            return View(model);
         }
 
         // POST: Users/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteConfirmed(string id)
         {
-            throw new NotImplementedException();
+            var member = await _userManager.FindByIdAsync(id);
+            if (member != null)
+            {
+                await _userManager.DeleteAsync(member);
+            }
+
+            return RedirectToAction(nameof(Index));
         }
 
     }
